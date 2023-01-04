@@ -2,6 +2,9 @@ import { jsonIgnoreReplacer, jsonIgnore } from 'json-ignore';
 import { CommandResponseNoValue, CommandResponseWithValue } from '../NCProtocol/Commands';
 import { WebSocketConnection } from '../Server';
 import { INotificationContext } from '../SessionManager';
+
+import ws281x from 'rpi-ws281x-native';
+
 import {
     BaseType,
     myIdDecorator,
@@ -246,6 +249,158 @@ export class NcGain extends NcActuator
                 new NcPropertyDescriptor(new NcElementId(3, 1), "ports", "NcPort", false, true, false, true, null, "The worker's signal ports"),
                 new NcPropertyDescriptor(new NcElementId(3, 2), "latency", "NcTimeInterval", true, true, true, false, null, "Processing latency of this object (null if not defined)"),
                 new NcPropertyDescriptor(new NcElementId(5, 1), "setPoint", "NcDB", false, false, false, false, null, "Gain set point value")
+            ],
+            [],
+            []
+        );
+
+        currentClassDescriptor.properties = currentClassDescriptor.properties.concat(baseDescriptor.properties);
+        currentClassDescriptor.methods = currentClassDescriptor.methods.concat(baseDescriptor.methods);
+        currentClassDescriptor.events = currentClassDescriptor.events.concat(baseDescriptor.events);
+
+        return currentClassDescriptor;
+    }
+}
+
+export class NcIdentificationActuator extends NcActuator
+{
+    @myIdDecorator('5p1')
+    public active: boolean;
+    
+    @myIdDecorator('6p1')
+    public activeColour: string;
+
+    public classID: number[] = [ 1, 2, 1, 1, 3, 0, 1 ];
+    public classVersion: string = "1.0.0";
+    
+    private leds: number[];
+    
+    private offColour: string = '#000000';
+
+    public constructor(
+        oid: number,
+        constantOid: boolean,
+        owner: number | null,
+        role: string,
+        userLabel: string,
+        touchpoints: NcTouchpoint[],
+        enabled: boolean,
+        ports: NcPort[] | null,
+        latency: number | null,
+        active: boolean,
+        description: string,
+        notificationContext: INotificationContext)
+    {
+        super(oid, constantOid, owner, role, userLabel, touchpoints, enabled, ports, latency, description, notificationContext);
+
+        this.active = active;
+        
+        this.activeColour = '#ff0000';
+        
+        const options = {
+          dma: 10,
+          freq: 800000,
+          gpio: 18,
+          invert: false,
+          brightness: 100,
+          stripType: ws281x.stripType.WS2812
+        };
+
+        const channel = ws281x(12, options);
+        this.leds = channel.array;
+        
+        this.SetLedsColour(this.offColour);        
+    }
+    
+    private SetLedsColour(colour: string)
+    {
+        let numberColour: number = parseInt(this.RemoveHash(colour), 16);
+        
+        this.leds[0] = numberColour;
+        this.leds[1] = numberColour;
+        this.leds[2] = numberColour;
+        this.leds[3] = numberColour;
+        this.leds[4] = numberColour;
+        this.leds[5] = numberColour;
+        this.leds[6] = numberColour;
+        this.leds[7] = numberColour;
+        this.leds[8] = numberColour;
+        this.leds[9] = numberColour;
+        this.leds[10] = numberColour;
+        this.leds[11] = numberColour;        
+        ws281x.render();
+    }
+    
+    private RemoveHash(colour: string) : string
+    {
+        return colour.replace('#', '');
+    }
+
+    //'1m1'
+    public override Get(oid: number, propertyId: NcElementId, handle: number) : CommandResponseNoValue
+    {
+        if(oid == this.oid)
+        {
+            let key: string = `${propertyId.level}p${propertyId.index}`;
+
+            switch(key)
+            {
+                case '5p1':
+                    return new CommandResponseWithValue(handle, NcMethodStatus.OK, this.active, null);
+                case '6p1':
+                    return new CommandResponseWithValue(handle, NcMethodStatus.OK, this.activeColour, null);
+                default:
+                    return super.Get(oid, propertyId, handle);
+            }
+        }
+
+        return new CommandResponseNoValue(handle, NcMethodStatus.InvalidRequest, 'OID could not be found');
+    }
+
+    //'1m2'
+    public override Set(oid: number, id: NcElementId, value: any, handle: number) : CommandResponseNoValue
+    {
+        if(oid == this.oid)
+        {
+            let key: string = `${id.level}p${id.index}`;
+
+            switch(key)
+            {
+                case '5p1':
+                    this.active = value;
+                    if(this.active)
+                        this.SetLedsColour(this.activeColour);
+                    else
+                        this.SetLedsColour(this.offColour);
+                    
+                    this.notificationContext.NotifyPropertyChanged(this.oid, id, NcPropertyChangeType.ValueChanged, this.active, null);
+                    return new CommandResponseNoValue(handle, NcMethodStatus.OK, null);
+                case '6p1':
+                    this.activeColour = value;
+                    if(this.active)
+                        this.SetLedsColour(this.activeColour);
+                    
+                    this.notificationContext.NotifyPropertyChanged(this.oid, id, NcPropertyChangeType.ValueChanged, this.activeColour, null);
+                    return new CommandResponseNoValue(handle, NcMethodStatus.OK, null);
+                default:
+                    return super.Set(oid, id, value, handle);
+            }
+        }
+
+        return new CommandResponseNoValue(handle, NcMethodStatus.InvalidRequest, 'OID could not be found');
+    }
+
+    public static override GetClassDescriptor(): NcClassDescriptor 
+    {
+        let baseDescriptor = super.GetClassDescriptor();
+
+        let currentClassDescriptor = new NcClassDescriptor("NcIdentificationCustomActuator class descriptor",
+            [ 
+                new NcPropertyDescriptor(new NcElementId(2, 1), "enabled", "NcBoolean", false, true, false, false, null, "TRUE iff worker is enabled"),
+                new NcPropertyDescriptor(new NcElementId(3, 1), "ports", "NcPort", false, true, false, true, null, "The worker's signal ports"),
+                new NcPropertyDescriptor(new NcElementId(3, 2), "latency", "NcTimeInterval", true, true, true, false, null, "Processing latency of this object (null if not defined)"),
+                new NcPropertyDescriptor(new NcElementId(5, 1), "active", "NcBoolean", false, false, false, false, null, "Indicator active state"),
+                new NcPropertyDescriptor(new NcElementId(6, 1), "activeColour", "NcString", false, false, false, false, null, "Indicator active state colour in hex format")
             ],
             [],
             []

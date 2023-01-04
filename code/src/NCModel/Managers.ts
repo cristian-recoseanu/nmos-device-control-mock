@@ -32,7 +32,7 @@ import {
     NcTouchpointNmos,
     NcTouchpointResource,
     NcTouchpointResourceNmos } from './Core';
-import { DemoDataType, NcDemo, NcGain, NcReceiverMonitor, NcReceiverStatus } from './Features';
+import { DemoDataType, NcDemo, NcGain, NcIdentificationActuator, NcReceiverMonitor, NcReceiverStatus } from './Features';
 
 export abstract class NcManager extends NcObject
 {
@@ -465,7 +465,8 @@ export class NcClassManager extends NcManager
             '1.3.4': NcSubscriptionManager.GetClassDescriptor(),
             '1.2.0.1': NcDemo.GetClassDescriptor(),
             '1.2.2': NcReceiverMonitor.GetClassDescriptor(),
-            '1.2.1.1.1': NcGain.GetClassDescriptor()
+            '1.2.1.1.1': NcGain.GetClassDescriptor(),
+            '1.2.1.1.3.0.1': NcIdentificationActuator.GetClassDescriptor()
         };
 
         return register;

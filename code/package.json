@@ -25,6 +25,7 @@
     "axios": "^0.24.0",
     "express": "^4.17.1",
     "json-ignore": "^0.4.0",
+    "rpi-ws281x-native": "^1.0.4",
     "sdp-transform": "^2.14.1",
     "shx": "^0.3.4",
     "tai64": "^1.0.0",
