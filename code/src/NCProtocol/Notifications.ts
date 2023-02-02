@@ -43,43 +43,31 @@ export class NcPropertyChangedEventData extends BaseType
     }
 }
 
-export enum NcNotificationType
-{
-    Event = 0,
-    SubscriptionEnd = 1
-}
-
 export class NcNotification
 {
-    public type: NcNotificationType = NcNotificationType.Event;
-
     public oid: number;
-
-    public eventId: NcElementId;
 
     public eventData: NcPropertyChangedEventData;
 
     constructor(
         oid: number,
-        eventId: NcElementId,
         eventData: NcPropertyChangedEventData)
     {
         this.oid = oid;
-        this.eventId = eventId;
         this.eventData = eventData;
     }
 }
 
 export class ProtoNotification extends ProtocolWrapper
 {
-    public messages: NcNotification[];
+    public notifications: NcNotification[];
 
     public constructor(
-        messages: NcNotification[])
+        notifications: NcNotification[])
     {
         super('1.0.0', MessageType.Notification);
 
-        this.messages = messages;
+        this.notifications = notifications;
     }
 
     public ToJson()
