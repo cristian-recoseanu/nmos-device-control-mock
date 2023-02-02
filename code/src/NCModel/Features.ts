@@ -82,6 +82,25 @@ export abstract class NcWorker extends NcObject
 
         return new CommandResponseNoValue(handle, NcMethodStatus.InvalidRequest, 'OID could not be found');
     }
+
+    public static override GetClassDescriptor(): NcClassDescriptor 
+    {
+        let baseDescriptor = super.GetClassDescriptor();
+
+        let currentClassDescriptor = new NcClassDescriptor("NcWorker class descriptor",
+            [
+                new NcPropertyDescriptor(new NcElementId(2, 1), "enabled", "NcBoolean", false, true, false, false, null, "TRUE iff worker is enabled")
+            ],
+            [],
+            []
+        );
+
+        currentClassDescriptor.properties = currentClassDescriptor.properties.concat(baseDescriptor.properties);
+        currentClassDescriptor.methods = currentClassDescriptor.methods.concat(baseDescriptor.methods);
+        currentClassDescriptor.events = currentClassDescriptor.events.concat(baseDescriptor.events);
+
+        return currentClassDescriptor;
+    }
 }
 
 export abstract class NcSignalWorker extends NcWorker
@@ -151,6 +170,26 @@ export abstract class NcSignalWorker extends NcWorker
 
         return new CommandResponseNoValue(handle, NcMethodStatus.InvalidRequest, 'OID could not be found');
     }
+
+    public static override GetClassDescriptor(): NcClassDescriptor 
+    {
+        let baseDescriptor = super.GetClassDescriptor();
+
+        let currentClassDescriptor = new NcClassDescriptor("NcSignalWorker class descriptor",
+            [
+                new NcPropertyDescriptor(new NcElementId(3, 1), "ports", "NcPort", false, true, false, true, null, "The worker's signal ports"),
+                new NcPropertyDescriptor(new NcElementId(3, 2), "latency", "NcTimeInterval", true, true, true, false, null, "Processing latency of this object (null if not defined)")
+            ],
+            [],
+            []
+        );
+
+        currentClassDescriptor.properties = currentClassDescriptor.properties.concat(baseDescriptor.properties);
+        currentClassDescriptor.methods = currentClassDescriptor.methods.concat(baseDescriptor.methods);
+        currentClassDescriptor.events = currentClassDescriptor.events.concat(baseDescriptor.events);
+
+        return currentClassDescriptor;
+    }
 }
 
 export abstract class NcActuator extends NcSignalWorker
@@ -170,12 +209,25 @@ export abstract class NcActuator extends NcSignalWorker
     {
         super(oid, constantOid, owner, role, userLabel, touchpoints, enabled, ports, latency, description, notificationContext);
     }
+
+    public static override GetClassDescriptor(): NcClassDescriptor 
+    {
+        let baseDescriptor = super.GetClassDescriptor();
+
+        let currentClassDescriptor = new NcClassDescriptor("NcActuator class descriptor", [], [], []);
+
+        currentClassDescriptor.properties = currentClassDescriptor.properties.concat(baseDescriptor.properties);
+        currentClassDescriptor.methods = currentClassDescriptor.methods.concat(baseDescriptor.methods);
+        currentClassDescriptor.events = currentClassDescriptor.events.concat(baseDescriptor.events);
+
+        return currentClassDescriptor;
+    }
 }
 
 export class NcGain extends NcActuator
 {
     @myIdDecorator('5p1')
-    public setPoint: number;
+    public gainValue: number;
 
     public classID: number[] = [ 1, 2, 1, 1, 1 ];
     public classVersion: string = "1.0.0";
@@ -190,13 +242,13 @@ export class NcGain extends NcActuator
         enabled: boolean,
         ports: NcPort[] | null,
         latency: number | null,
-        setPoint: number,
+        gainValue: number,
         description: string,
         notificationContext: INotificationContext)
     {
         super(oid, constantOid, owner, role, userLabel, touchpoints, enabled, ports, latency, description, notificationContext);
 
-        this.setPoint = setPoint;
+        this.gainValue = gainValue;
     }
 
     //'1m1'
@@ -209,7 +261,7 @@ export class NcGain extends NcActuator
             switch(key)
             {
                 case '5p1':
-                    return new CommandResponseWithValue(handle, NcMethodStatus.OK, this.setPoint, null);
+                    return new CommandResponseWithValue(handle, NcMethodStatus.OK, this.gainValue, null);
                 default:
                     return super.Get(oid, propertyId, handle);
             }
@@ -228,8 +280,8 @@ export class NcGain extends NcActuator
             switch(key)
             {
                 case '5p1':
-                    this.setPoint = value;
-                    this.notificationContext.NotifyPropertyChanged(this.oid, id, NcPropertyChangeType.ValueChanged, this.setPoint, null);
+                    this.gainValue = value;
+                    this.notificationContext.NotifyPropertyChanged(this.oid, id, NcPropertyChangeType.ValueChanged, this.gainValue, null);
                     return new CommandResponseNoValue(handle, NcMethodStatus.OK, null);
                 default:
                     return super.Set(oid, id, value, handle);
@@ -244,11 +296,8 @@ export class NcGain extends NcActuator
         let baseDescriptor = super.GetClassDescriptor();
 
         let currentClassDescriptor = new NcClassDescriptor("NcGain class descriptor",
-            [ 
-                new NcPropertyDescriptor(new NcElementId(2, 1), "enabled", "NcBoolean", false, true, false, false, null, "TRUE iff worker is enabled"),
-                new NcPropertyDescriptor(new NcElementId(3, 1), "ports", "NcPort", false, true, false, true, null, "The worker's signal ports"),
-                new NcPropertyDescriptor(new NcElementId(3, 2), "latency", "NcTimeInterval", true, true, true, false, null, "Processing latency of this object (null if not defined)"),
-                new NcPropertyDescriptor(new NcElementId(5, 1), "setPoint", "NcDB", false, false, false, false, null, "Gain set point value")
+            [
+                new NcPropertyDescriptor(new NcElementId(5, 1), "gainValue", "NcDB", false, false, false, false, null, "Gain value")
             ],
             [],
             []
@@ -262,15 +311,97 @@ export class NcGain extends NcActuator
     }
 }
 
-export class NcIdentificationActuator extends NcActuator
+export class NcIdentBeacon extends NcWorker
 {
-    @myIdDecorator('5p1')
+    @myIdDecorator('3p1')
     public active: boolean;
+
+    public classID: number[] = [ 1, 2, 2 ];
+    public classVersion: string = "1.0.0";
     
-    @myIdDecorator('6p1')
+    public constructor(
+        oid: number,
+        constantOid: boolean,
+        owner: number | null,
+        role: string,
+        userLabel: string,
+        touchpoints: NcTouchpoint[],
+        enabled: boolean,
+        active: boolean,
+        description: string,
+        notificationContext: INotificationContext)
+    {
+        super(oid, constantOid, owner, role, userLabel, touchpoints, enabled, description, notificationContext);
+
+        this.active = active;
+    }
+
+    //'1m1'
+    public override Get(oid: number, propertyId: NcElementId, handle: number) : CommandResponseNoValue
+    {
+        if(oid == this.oid)
+        {
+            let key: string = `${propertyId.level}p${propertyId.index}`;
+
+            switch(key)
+            {
+                case '3p1':
+                    return new CommandResponseWithValue(handle, NcMethodStatus.OK, this.active, null);
+                default:
+                    return super.Get(oid, propertyId, handle);
+            }
+        }
+
+        return new CommandResponseNoValue(handle, NcMethodStatus.InvalidRequest, 'OID could not be found');
+    }
+
+    //'1m2'
+    public override Set(oid: number, id: NcElementId, value: any, handle: number) : CommandResponseNoValue
+    {
+        if(oid == this.oid)
+        {
+            let key: string = `${id.level}p${id.index}`;
+
+            switch(key)
+            {
+                case '3p1':
+                    this.active = value;
+                    this.notificationContext.NotifyPropertyChanged(this.oid, id, NcPropertyChangeType.ValueChanged, this.active, null);
+                    return new CommandResponseNoValue(handle, NcMethodStatus.OK, null);
+                default:
+                    return super.Set(oid, id, value, handle);
+            }
+        }
+
+        return new CommandResponseNoValue(handle, NcMethodStatus.InvalidRequest, 'OID could not be found');
+    }
+
+    public static override GetClassDescriptor(): NcClassDescriptor 
+    {
+        let baseDescriptor = super.GetClassDescriptor();
+
+        let currentClassDescriptor = new NcClassDescriptor("NcIdentBeacon class descriptor",
+            [
+                new NcPropertyDescriptor(new NcElementId(3, 1), "active", "NcBoolean", false, false, false, false, null, "Indicator active state")
+            ],
+            [],
+            []
+        );
+
+        currentClassDescriptor.properties = currentClassDescriptor.properties.concat(baseDescriptor.properties);
+        currentClassDescriptor.methods = currentClassDescriptor.methods.concat(baseDescriptor.methods);
+        currentClassDescriptor.events = currentClassDescriptor.events.concat(baseDescriptor.events);
+
+        return currentClassDescriptor;
+    }
+}
+
+export class NcIdentBeaconCustom extends NcIdentBeacon
+{
+    @myIdDecorator('4p1')
     public activeColour: string;
 
-    public classID: number[] = [ 1, 2, 1, 1, 3, 0, 1 ];
+    public classID: number[] = [ 1, 2, 2, 0, 1 ];
     public classVersion: string = "1.0.0";
     
     private leds: number[];
@@ -285,16 +416,12 @@ export class NcIdentificationActuator extends NcActuator
         userLabel: string,
         touchpoints: NcTouchpoint[],
         enabled: boolean,
-        ports: NcPort[] | null,
-        latency: number | null,
         active: boolean,
         description: string,
         notificationContext: INotificationContext)
     {
-        super(oid, constantOid, owner, role, userLabel, touchpoints, enabled, ports, latency, description, notificationContext);
+        super(oid, constantOid, owner, role, userLabel, touchpoints, enabled, active, description, notificationContext);
 
-        this.active = active;
-        
         this.activeColour = '#ff0000';
         
         const options = {
@@ -309,7 +436,7 @@ export class NcIdentificationActuator extends NcActuator
         const channel = ws281x(12, options);
         this.leds = channel.array;
         
-        this.SetLedsColour(this.offColour);        
+        this.SetLedsColour(this.offColour);
     }
     
     private SetLedsColour(colour: string)
@@ -327,7 +454,7 @@ export class NcIdentificationActuator extends NcActuator
         this.leds[8] = numberColour;
         this.leds[9] = numberColour;
         this.leds[10] = numberColour;
-        this.leds[11] = numberColour;        
+        this.leds[11] = numberColour;
         ws281x.render();
     }
     
@@ -345,9 +472,7 @@ export class NcIdentificationActuator extends NcActuator
 
             switch(key)
             {
-                case '5p1':
-                    return new CommandResponseWithValue(handle, NcMethodStatus.OK, this.active, null);
-                case '6p1':
+                case '4p1':
                     return new CommandResponseWithValue(handle, NcMethodStatus.OK, this.activeColour, null);
                 default:
                     return super.Get(oid, propertyId, handle);
@@ -366,7 +491,7 @@ export class NcIdentificationActuator extends NcActuator
 
             switch(key)
             {
-                case '5p1':
+                case '3p1':
                     this.active = value;
                     if(this.active)
                         this.SetLedsColour(this.activeColour);
@@ -375,7 +500,7 @@ export class NcIdentificationActuator extends NcActuator
                     
                     this.notificationContext.NotifyPropertyChanged(this.oid, id, NcPropertyChangeType.ValueChanged, this.active, null);
                     return new CommandResponseNoValue(handle, NcMethodStatus.OK, null);
-                case '6p1':
+                case '4p1':
                     this.activeColour = value;
                     if(this.active)
                         this.SetLedsColour(this.activeColour);
@@ -394,13 +519,9 @@ export class NcIdentificationActuator extends NcActuator
     {
         let baseDescriptor = super.GetClassDescriptor();
 
-        let currentClassDescriptor = new NcClassDescriptor("NcIdentificationCustomActuator class descriptor",
+        let currentClassDescriptor = new NcClassDescriptor("NcIdentBeaconCustom class descriptor",
             [ 
-                new NcPropertyDescriptor(new NcElementId(2, 1), "enabled", "NcBoolean", false, true, false, false, null, "TRUE iff worker is enabled"),
-                new NcPropertyDescriptor(new NcElementId(3, 1), "ports", "NcPort", false, true, false, true, null, "The worker's signal ports"),
-                new NcPropertyDescriptor(new NcElementId(3, 2), "latency", "NcTimeInterval", true, true, true, false, null, "Processing latency of this object (null if not defined)"),
-                new NcPropertyDescriptor(new NcElementId(5, 1), "active", "NcBoolean", false, false, false, false, null, "Indicator active state"),
-                new NcPropertyDescriptor(new NcElementId(6, 1), "activeColour", "NcString", false, false, false, false, null, "Indicator active state colour in hex format")
+                new NcPropertyDescriptor(new NcElementId(4, 1), "activeColour", "NcString", false, false, false, false, null, "Beacon active state colour in hex format")
             ],
             [],
             []
@@ -462,7 +583,7 @@ export class NcReceiverStatus extends BaseType
 export class NcReceiverMonitor extends NcWorker
 {
     @myIdDecorator('1p1')
-    public classID: number[] = [ 1, 2, 2 ];
+    public classID: number[] = [ 1, 2, 3 ];
 
     @myIdDecorator('1p2')
     public classVersion: string = "1.0.0";
@@ -594,7 +715,6 @@ export class NcReceiverMonitor extends NcWorker
 
         let currentClassDescriptor = new NcClassDescriptor("NcReceiverMonitor class descriptor",
             [
-                new NcPropertyDescriptor(new NcElementId(2, 1), "enabled", "NcBoolean", false, true, false, false, null, "TRUE iff worker is enabled"),
                 new NcPropertyDescriptor(new NcElementId(3, 1), "connectionStatus", "NcConnectionStatus", true, false, false, false, null, "Connection status property"),
                 new NcPropertyDescriptor(new NcElementId(3, 2), "connectionStatusMessage", "NcString", true, false, true, false, null, "Connection status message property"),
                 new NcPropertyDescriptor(new NcElementId(3, 3), "payloadStatus", "NcPayloadStatus", true, false, false, false, null, "Payload status property"),
@@ -1314,7 +1434,6 @@ export class NcDemo extends NcWorker
 
         let currentClassDescriptor = new NcClassDescriptor("NcDemo class descriptor",
             [
-                new NcPropertyDescriptor(new NcElementId(2, 1), "enabled", "NcBoolean", false, true, false, false, null, "TRUE iff worker is enabled"),
                 new NcPropertyDescriptor(new NcElementId(3, 1), "enumProperty", "NcDemoEnum", false, false, false, false, null, "Demo enum property"),
                 new NcPropertyDescriptor(new NcElementId(3, 2), "stringProperty", "NcString", false, false, false, false, new NcParameterConstraintString(10, null),
                     "Demo string property"),

@@ -14,7 +14,7 @@ import { SessionManager } from './SessionManager';
 import { NcBlock, RootBlock } from './NCModel/Blocks';
 import { NcClassManager, NcDeviceManager, NcSubscriptionManager } from './NCModel/Managers';
 import { NcIoDirection, NcPort, NcPortReference, NcSignalPath, NcTouchpointNmos, NcTouchpointResourceNmos } from './NCModel/Core';
-import { NcDemo, NcGain, NcIdentificationActuator, NcReceiverMonitor } from './NCModel/Features';
+import { NcDemo, NcGain, NcIdentBeaconCustom, NcReceiverMonitor } from './NCModel/Features';
 
 export interface WebSocketConnection extends WebSocket {
     isAlive: boolean;
@@ -194,7 +194,7 @@ try
             "Stereo gain block",
             sessionManager);
 
-    const identIndicator = new NcIdentificationActuator(51, true, 1, "IdentIndicator", "Identification indicator", [], true, [], null, false, "Identification indicator", sessionManager);
+    const identBeaconCustom = new NcIdentBeaconCustom(51, true, 1, "IdentBeacon", "Identification beacon", [], true, false, "Identification beacon", sessionManager);
 
     const rootBlock = new RootBlock(
         1,
@@ -210,7 +210,7 @@ try
         null,
         "Blockspec for root block of minimum compliant device",
         false,
-        [ deviceManager, classManager, subscriptionManager, receiverMonitorAgent, stereoGainBlock, demoClass, identIndicator ],
+        [ deviceManager, classManager, subscriptionManager, receiverMonitorAgent, stereoGainBlock, demoClass, identBeaconCustom ],
         null,
         null,
         "Root block",
