@@ -408,6 +408,10 @@ export class NcIdentBeaconCustom extends NcIdentBeacon
     
     private offColour: string = '#000000';
 
+    private timerId: any;
+
+    private ledState: boolean;
+
     public constructor(
         oid: number,
         constantOid: boolean,
@@ -423,6 +427,7 @@ export class NcIdentBeaconCustom extends NcIdentBeacon
         super(oid, constantOid, owner, role, userLabel, touchpoints, enabled, active, description, notificationContext);
 
         this.activeColour = '#ff0000';
+        this.ledState = false;
         
         const options = {
           dma: 10,
@@ -456,6 +461,29 @@ export class NcIdentBeaconCustom extends NcIdentBeacon
         this.leds[10] = numberColour;
         this.leds[11] = numberColour;
         ws281x.render();
+    }
+
+    private ToggleLedsColour()
+    {
+        if(this.ledState)
+            this.SetLedsColour(this.activeColour);
+        else
+            this.SetLedsColour(this.offColour);
+
+        this.ledState = !this.ledState;
+    }
+
+    private StartBeacon()
+    {
+        this.timerId = setInterval(() => this.ToggleLedsColour(), 2000);
+    }
+
+    private StopBeacon()
+    {
+        if(this.timerId)
+            clearInterval(this.timerId);
+
+        this.SetLedsColour(this.offColour);
     }
     
     private RemoveHash(colour: string) : string
@@ -494,10 +522,10 @@ export class NcIdentBeaconCustom extends NcIdentBeacon
                 case '3p1':
                     this.active = value;
                     if(this.active)
-                        this.SetLedsColour(this.activeColour);
+                        this.StartBeacon();
                     else
-                        this.SetLedsColour(this.offColour);
-                    
+                        this.StopBeacon();
+
                     this.notificationContext.NotifyPropertyChanged(this.oid, id, NcPropertyChangeType.ValueChanged, this.active, null);
                     return new CommandResponseNoValue(handle, NcMethodStatus.OK, null);
                 case '4p1':
