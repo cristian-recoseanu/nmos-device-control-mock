@@ -446,11 +446,13 @@ export class NcIdentBeacon extends NcWorker
 
 export class NcIdentBeaconCustom extends NcIdentBeacon
 {
+    public static staticClassID: number[] = [ 1, 2, 2, 0, 1 ];
+
+    @myIdDecorator('1p1')
+    public override classID: number[] = NcIdentBeaconCustom.staticClassID;
+
     @myIdDecorator('4p1')
     public activeColour: string;
-
-    public classID: number[] = [ 1, 2, 2, 0, 1 ];
-    public classVersion: string = "1.0.0";
     
     private leds: number[];
     
@@ -467,12 +469,13 @@ export class NcIdentBeaconCustom extends NcIdentBeacon
         role: string,
         userLabel: string,
         touchpoints: NcTouchpoint[],
+        runtimePropertyConstraints: NcPropertyConstraints[] | null,
         enabled: boolean,
         active: boolean,
         description: string,
         notificationContext: INotificationContext)
     {
-        super(oid, constantOid, owner, role, userLabel, touchpoints, enabled, active, description, notificationContext);
+        super(oid, constantOid, owner, role, userLabel, touchpoints, runtimePropertyConstraints, enabled, active, description, notificationContext);
 
         this.activeColour = '#ff0000';
         this.ledState = false;
@@ -549,13 +552,13 @@ export class NcIdentBeaconCustom extends NcIdentBeacon
             switch(key)
             {
                 case '4p1':
-                    return new CommandResponseWithValue(handle, NcMethodStatus.OK, this.activeColour, null);
+                    return new CommandResponseWithValue(handle, NcMethodStatus.OK, this.activeColour);
                 default:
                     return super.Get(oid, propertyId, handle);
             }
         }
 
-        return new CommandResponseNoValue(handle, NcMethodStatus.InvalidRequest, 'OID could not be found');
+        return new CommandResponseError(handle, NcMethodStatus.InvalidRequest, 'OID could not be found');
     }
 
     //'1m2'
@@ -575,27 +578,26 @@ export class NcIdentBeaconCustom extends NcIdentBeacon
                         this.StopBeacon();
 
                     this.notificationContext.NotifyPropertyChanged(this.oid, id, NcPropertyChangeType.ValueChanged, this.active, null);
-                    return new CommandResponseNoValue(handle, NcMethodStatus.OK, null);
+                    return new CommandResponseNoValue(handle, NcMethodStatus.OK);
                 case '4p1':
                     this.activeColour = value;
                     if(this.active)
                         this.SetLedsColour(this.activeColour);
                     
                     this.notificationContext.NotifyPropertyChanged(this.oid, id, NcPropertyChangeType.ValueChanged, this.activeColour, null);
-                    return new CommandResponseNoValue(handle, NcMethodStatus.OK, null);
+                    return new CommandResponseNoValue(handle, NcMethodStatus.OK);
                 default:
                     return super.Set(oid, id, value, handle);
             }
         }
 
-        return new CommandResponseNoValue(handle, NcMethodStatus.InvalidRequest, 'OID could not be found');
+        return new CommandResponseError(handle, NcMethodStatus.InvalidRequest, 'OID could not be found');
     }
 
-    public static override GetClassDescriptor(): NcClassDescriptor 
+    public static override GetClassDescriptor(includeInherited: boolean): NcClassDescriptor 
     {
-        let baseDescriptor = super.GetClassDescriptor();
-
-        let currentClassDescriptor = new NcClassDescriptor("NcIdentBeaconCustom class descriptor",
+        let currentClassDescriptor = new NcClassDescriptor(`${NcIdentBeaconCustom.name} class descriptor`,
+            NcIdentBeaconCustom.staticClassID, NcIdentBeaconCustom.name, null,
             [ 
                 new NcPropertyDescriptor(new NcElementId(4, 1), "activeColour", "NcString", false, false, false, false, null, "Beacon active state colour in hex format")
             ],
@@ -603,9 +605,14 @@ export class NcIdentBeaconCustom extends NcIdentBeacon
             []
         );
 
-        currentClassDescriptor.properties = currentClassDescriptor.properties.concat(baseDescriptor.properties);
-        currentClassDescriptor.methods = currentClassDescriptor.methods.concat(baseDescriptor.methods);
-        currentClassDescriptor.events = currentClassDescriptor.events.concat(baseDescriptor.events);
+        if(includeInherited)
+        {
+            let baseDescriptor = super.GetClassDescriptor(includeInherited);
+
+            currentClassDescriptor.properties = currentClassDescriptor.properties.concat(baseDescriptor.properties);
+            currentClassDescriptor.methods = currentClassDescriptor.methods.concat(baseDescriptor.methods);
+            currentClassDescriptor.events = currentClassDescriptor.events.concat(baseDescriptor.events);
+        }
 
         return currentClassDescriptor;
     }

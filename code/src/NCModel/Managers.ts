@@ -575,7 +575,7 @@ export class NcClassManager extends NcManager
             case '1.3.2': return NcClassManager.GetClassDescriptor(true);
             case '1.2.0.1': return NcDemo.GetClassDescriptor(true);
             case '1.2.2': return NcIdentBeacon.GetClassDescriptor(true);
-			case '1.2.2.0.1': return NcIdentBeaconCustom.GetClassDescriptor(true),
+            case '1.2.2.0.1': return NcIdentBeaconCustom.GetClassDescriptor(true);
             case '1.2.3': return NcReceiverMonitor.GetClassDescriptor(true);
             case '1.2.1.1.1': return NcGain.GetClassDescriptor(true);
             default: return null;

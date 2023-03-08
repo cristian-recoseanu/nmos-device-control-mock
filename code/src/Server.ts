@@ -190,7 +190,7 @@ try
             "Stereo gain block",
             sessionManager);
 
-    const identBeaconCustom = new NcIdentBeaconCustom(51, true, 1, "IdentBeacon", "Identification beacon", [], true, false, "Identification beacon", sessionManager);
+    const identBeaconCustom = new NcIdentBeaconCustom(51, true, 1, "IdentBeacon", "Identification beacon", [], null, true, false, "Identification beacon", sessionManager);
 
     const rootBlock = new RootBlock(
         1,
